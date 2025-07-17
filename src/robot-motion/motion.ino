@@ -30,11 +30,15 @@ void engine(int motorNum, int power = 127) {
 }
 
 void measureDepth(float &depth, float depthOffset) {
-  sensor.read();
-  depth = sensor.depth() + depthOffset;
-  Serial.print("Depth: ");
-  Serial.print(depth);
-  Serial.println(" m");
+  if (sensor.read()) {
+    depth = sensor.depth() + depthOffset;
+    Serial.print("Depth: ");
+    Serial.print(depth);
+    Serial.println(" m");
+  } else {
+    Serial.println("Sensor read failed!");
+    depth = -999.0; //Test value for failed reading
+  }
 }
 
 void controlDepthCycle() {
@@ -43,6 +47,12 @@ void controlDepthCycle() {
   const float tolerance = 0.05;
 
   measureDepth(depth, depthOffset);
+
+  if (depth == -999.0) {
+    engine(3, 0); //Stops motor
+    Serial.println("Invalid depth reading. Halting.");
+    return;
+  }
 
   switch (currentState) {
     case GOING_DOWN:
