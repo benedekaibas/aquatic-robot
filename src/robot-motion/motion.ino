@@ -65,6 +65,14 @@ void controlDepthCycle() {
         currentState = GOING_UP;
       }
       break;
+
+    case GOING_UP:
+      if (depth > 1.0 + tolerance) {
+        engine(3, -100) // Move up (negative power)
+      } else {
+        engine(3, 0);
+        Serial.print("Reached 1m. Going back to 3m.");
+        currentState = GOING_DOWN;
       }
       break;
   }
@@ -94,4 +102,6 @@ void setup() {
 void loop() {
   controlDepthCycle();
 }
+
+
 
