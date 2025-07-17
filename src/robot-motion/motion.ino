@@ -88,7 +88,7 @@ void setup() {
     Serial.println("MS5837 not found!");
     while (true){
       delay(1000); //this part is updated for removing error message MS5837 not found
-    };
+    }
   }
 
   sensor.setModel(MS5837::MS5837_30BA);
