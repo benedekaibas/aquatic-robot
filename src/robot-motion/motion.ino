@@ -31,16 +31,23 @@ void engine(int motorNum, int power = 127) {
 
 void measureDepth(float &depth, float depthOffset) {
   sensor.read();
-  depth = sensor.depth() + depthOffset;
+  float raw = sens.depth(); // store raw reading for debugging
+  depth = raw + depthOffset;
+
+  Serial.print("Raw: ");
+  Serial.print(raw);
+  Serial.print(" + Offset: ");
+  Serial.print(depthOffset);
+  Serial.print(" = Final depth: ");
+  Serial.print(depth);
 
   if (depth < -5.0 || depth > 20.0) {
     Serial.println("Sensor read failed or returned bad value");
     depth = -999.0;
   } else {
-    Serial.print("Depth: ");
-    Serial.print(depth);
-    Serial.println(" m");
+    Serial.print("Depth value is valid");
   }
+}
 
 void controlDepthCycle() {
   float depth;
