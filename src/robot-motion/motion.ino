@@ -34,11 +34,11 @@ void measureDepth(float &depth, float depthOffset) {
   float raw = sensor.depth(); // store raw reading for debugging
   depth = raw + depthOffset;
 
-  Serial.print("Raw: ");
+  Serial.print("Raw: \n");
   Serial.print(raw);
-  Serial.print(" + Offset: ");
+  Serial.print(" + Offset: \n");
   Serial.print(depthOffset);
-  Serial.print(" = Final depth: ");
+  Serial.print(" = Final depth: \n");
   Serial.print(depth);
 
   if (depth < -5.0 || depth > 20.0) {
