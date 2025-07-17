@@ -31,7 +31,7 @@ void engine(int motorNum, int power = 127) {
 
 void measureDepth(float &depth, float depthOffset) {
   sensor.read();
-  float raw = sens.depth(); // store raw reading for debugging
+  float raw = sensor.depth(); // store raw reading for debugging
   depth = raw + depthOffset;
 
   Serial.print("Raw: ");
@@ -86,7 +86,7 @@ void controlDepthCycle() {
 
     case GOING_UP:
       if (depth > 1.0 + tolerance) {
-        engine(3, -100) // Move up (negative power)
+        engine(3, -100); // Move up (negative power)
       } else {
         engine(3, 0);
         Serial.print("Reached 1m. Going back to 3m.");
