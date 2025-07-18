@@ -2,6 +2,7 @@
 #include "MS5837.h"
 #include <SoftwareSerial.h>
 #include <SabertoothSimplified.h>
+#include <algorithm>
 
 MS5837 sensor;
 
@@ -40,31 +41,31 @@ void engine(int motorNum, int power) {
 }
 
 // Read safe depth
-float readDepth() {
-  float sum = 0;
-  int valid = 0;
+float getMedianDepth() {
+  float readings[5];
+  int count = 0;
 
-  for (int i = 0; i < 5; i++) {
-    sensor.read();
-    float raw = sensor.depth();
-    if (raw > -5.0 && raw < 20.0) {
-      sum += raw;
-      valid++;
+  for (int i = 0; i < 5; ++i) {
+    if (sensor.read()) {
+      float raw = sensor.depth();
+      if (raw > 0.0 && raw < 10.0) {
+        readings[count++] = raw;
+      }
     }
     delay(10);
   }
 
-  float avgDepth;
-  if (valid > 0) {
-    avgDepth = (sum / valid) + DEPTH_OFFSET;
-    lastGoodDepth = avgDepth;
-  } else {
-    Serial.println("⚠️ Sensor read failed. Using last known depth.");
-    avgDepth = lastGoodDepth;
+  if (count == 0) {
+    Serial.println("⚠️ All sensor reads failed. Using last known depth.");
+    return lastGoodDepth;
   }
 
-  return avgDepth;
+  std::sort(readings, readings + count);
+  float median = readings[count / 2];
+  lastGoodDepth = median + DEPTH_OFFSET;
+  return lastGoodDepth;
 }
+
 
 void softStartMotor(int power){
   for(int p = 0; p <= power; p += 10){
@@ -74,7 +75,7 @@ void softStartMotor(int power){
 }
 
 void controlLogic() {
-  float depth = readDepth();
+  float depth = getMedianDepth();
   Serial.print("Depth: ");
   Serial.println(depth);
 
