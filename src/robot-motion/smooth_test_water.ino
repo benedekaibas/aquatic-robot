@@ -20,7 +20,9 @@ DepthState currentState = GOING_DOWN;
 unsigned long holdStartTime = 0;
 bool holdStarted = false;
 
-// Motor control
+int debugCounter = 0;
+
+// Motor control helper
 void engine(int motorNum, int power = 127) {
   if (motorNum == 3) {
     digitalWrite(ST1_S2, HIGH);
@@ -30,7 +32,7 @@ void engine(int motorNum, int power = 127) {
   }
 }
 
-// Get averaged depth with validation
+// Moving average depth reader (uses raw MS5837 values)
 bool getAverageDepth(float &depth, float offset = 0.5, int samples = 5) {
   float sum = 0;
   int valid = 0;
@@ -42,65 +44,63 @@ bool getAverageDepth(float &depth, float offset = 0.5, int samples = 5) {
       sum += raw;
       valid++;
     }
-    delay(10);
+    delay(10);  // pause between reads
   }
 
   if (valid > 0) {
     depth = (sum / valid) + offset;
-    Serial.print("Avg depth from ");
-    Serial.print(valid);
-    Serial.print(" samples: ");
-    Serial.println(depth);
+
+    // Limit debug output to every 10th read
+    if (debugCounter++ % 10 == 0) {
+      Serial.print("Avg depth from ");
+      Serial.print(valid);
+      Serial.print(" samples: ");
+      Serial.println(depth);
+    }
     return true;
   } else {
+    Serial.println("❌ Failed to get valid depth samples");
+    depth = -999.0;
     return false;
   }
 }
 
-// Control state transitions based on depth
+// Controls depth logic based on state machine
 void controlDepthCycle() {
   float depth;
   const float tolerance = 0.05;
-
-  // Keep track of last good reading
   static float lastValidDepth = 0.0;
   static int depthFailCount = 0;
-  const int maxDepthFails = 10;
+  const int maxConsecutiveFails = 30;
 
-  // Try to get valid depth
   if (!getAverageDepth(depth)) {
+
     depthFailCount++;
     Serial.print("⚠️ Depth read failed. Using last good depth: ");
     Serial.println(lastValidDepth);
 
-    if (depthFailCount >= maxDepthFails) {
-      engine(3, 0);
-      Serial.println("❌ Too many bad readings. Halting.");
-      return;
-    }
-
-    depth = lastValidDepth;  // Use fallback
-  } else {
-    lastValidDepth = depth;
-    depthFailCount = 0;
+  if (depthFailCount >= maxConsecutiveFails) {
+    engine(3, 0);
+    Serial.println("❌ Too many bad readings. Halting.");
+    return;
   }
 
-  // State machine logic
-  static bool hasGoneDeepEnough = false;
-  static bool hasRisenHighEnough = false;
+  depth = lastValidDepth;  // Use fallback
+  } else {
+    lastValidDepth = depth;
+    depthFailCount = 0;  // Reset fail counter
+}
 
   switch (currentState) {
     case GOING_DOWN:
-      if (depth < 2.95) {
-        hasGoneDeepEnough = true;
+      if (depth < 3.0 - tolerance) {
         engine(3, 100);  // Dive
-      } else if (hasGoneDeepEnough && depth >= 2.95) {
+      } else {
         engine(3, 0);
         Serial.println("Reached 3m. Holding...");
         holdStartTime = millis();
         holdStarted = true;
         currentState = HOLDING_AT_BOTTOM;
-        hasGoneDeepEnough = false;
       }
       break;
 
@@ -114,14 +114,12 @@ void controlDepthCycle() {
       break;
 
     case GOING_UP:
-      if (depth > 1.05) {
-        hasRisenHighEnough = true;
+      if (depth > 1.0 + tolerance) {
         engine(3, -100);  // Surface
-      } else if (hasRisenHighEnough && depth <= 1.05) {
+      } else {
         engine(3, 0);
         Serial.println("Reached 1m. Going back to 3m.");
         currentState = GOING_DOWN;
-        hasRisenHighEnough = false;
       }
       break;
   }
@@ -138,7 +136,9 @@ void setup() {
 
   if (!sensor.init()) {
     Serial.println("MS5837 not found!");
-    while (true) delay(1000);
+    while (true) {
+      delay(1000);
+    }
   }
 
   Serial.println("System initialized. Starting depth loop...");
@@ -146,5 +146,5 @@ void setup() {
 
 void loop() {
   controlDepthCycle();
-  delay(20);  // Prevent I2C overload
+  delay(20);  // Prevents I2C spamming
 }
