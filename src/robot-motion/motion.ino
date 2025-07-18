@@ -1,7 +1,7 @@
 #include <Wire.h>
 #include "MS5837.h"
 #include <SoftwareSerial.h>
-#include <SabertoothSimplified.h>
+# <SabertoothSimplified.h>
 
 MS5837 sensor;
 
@@ -56,37 +56,6 @@ void controlDepthCycle() {
 
   measureDepth(depth, depthOffset);
 
-  if (depth == -999.0) {
-    engine(3, 0); //Stops motor
-    Serial.println("Invalid depth reading. Halting.");
-    return;
-  }
-
-  switch (currentState) {
-    case GOING_DOWN:
-      if (depth < 3.0 - tolerance) {
-        engine(3, 100);  // Move down
-      } else {
-        engine(3, 0);    // Stop
-        Serial.println("Reached 3m. Holding...");
-        holdStartTime = millis();
-        holdStarted = true;
-        currentState = HOLDING_AT_BOTTOM;
-      }
-      break;
-
-    case HOLDING_AT_BOTTOM:
-      engine(3, 0);  // Stay still
-      if (holdStarted && millis() - holdStartTime >= 10000) {
-        Serial.println("Hold complete. Going back to 1m.");
-        holdStarted = false;
-        currentState = GOING_UP;
-      }
-      break;
-
-    case GOING_UP:
-      if (depth > 1.0 + tolerance) {
-        engine(3, -100); // Move up (negative power)
       } else {
         engine(3, 0);
         Serial.print("Reached 1m. Going back to 3m.");
@@ -120,4 +89,6 @@ void setup() {
 void loop() {
   controlDepthCycle();
 }
+
+
 
