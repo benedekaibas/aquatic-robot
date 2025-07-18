@@ -7,16 +7,6 @@ MS5837 sensor;
 unsigned long lastReadTime = 0;
 const unsigned long interval = 5000; // 5 seconds
 
-// Motor control
-void engine(int motorNum, int power) {
-  if (motorNum == 3) {
-    digitalWrite(ST1_S2, HIGH);
-    ST.motor(1, power);                       // DELETE THIS FUNCTION IF IT'S NOT WORKING
-    delayMicroseconds(50);
-    digitalWrite(ST1_S2, LOW);
-  }
-} 
-
 void setup() {
   Serial.begin(9600);
   Wire.begin();
