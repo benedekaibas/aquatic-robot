@@ -2,7 +2,6 @@
 #include "MS5837.h"
 #include <SoftwareSerial.h>
 #include <SabertoothSimplified.h>
-#include <algorithm>
 
 MS5837 sensor;
 
@@ -40,6 +39,19 @@ void engine(int motorNum, int power) {
   }
 }
 
+// bubble sort for the getMedianDepth()
+void bubbleSort(float arr[], int n) {
+  for (int i = 0; i < n - 1; i++) {
+    for (int j = 0; j < n - i - 1; j++) {
+      if (arr[j] > arr[j + 1]) {
+        float temp = arr[j];
+        arr[j] = arr[j + 1];
+        arr[j + 1] = temp;
+      }
+    }
+  }
+}
+
 // Read safe depth
 float getMedianDepth() {
   float readings[5];
@@ -60,11 +72,12 @@ float getMedianDepth() {
     return lastGoodDepth;
   }
 
-  std::sort(readings, readings + count);
+  bubbleSort(readings, count);
   float median = readings[count / 2];
   lastGoodDepth = median + DEPTH_OFFSET;
   return lastGoodDepth;
 }
+
 
 
 void softStartMotor(int power){
