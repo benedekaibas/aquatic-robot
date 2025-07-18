@@ -51,18 +51,19 @@ float readDepth() {
       sum += raw;
       valid++;
     }
-    }
     delay(10);
   }
 
+  float avgDepth;
   if (valid > 0) {
-    float avgDepth = (sum / valid) + DEPTH_OFFSET;
+    avgDepth = (sum / valid) + DEPTH_OFFSET;
     lastGoodDepth = avgDepth;
-    return avgDepth;
   } else {
     Serial.println("⚠️ Sensor read failed. Using last known depth.");
-    return lastGoodDepth;
+    avgDepth = lastGoodDepth;
   }
+
+  return avgDepth;
 }
 
 void controlLogic() {
