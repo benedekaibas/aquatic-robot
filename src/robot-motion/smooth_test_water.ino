@@ -45,12 +45,12 @@ float readDepth() {
   int valid = 0;
 
   for (int i = 0; i < 5; i++) {
-    if (sensor.read()) {
-      float raw = sensor.depth();
-      if (raw > -5.0 && raw < 20.0) {
-        sum += raw;
-        valid++;
-      }
+    sensor.read();
+    float raw = sensor.depth();
+    if (raw > -5.0 && raw < 20.0) {
+      sum += raw;
+      valid++;
+    }
     }
     delay(10);
   }
