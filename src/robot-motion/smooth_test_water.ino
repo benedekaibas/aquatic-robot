@@ -58,12 +58,14 @@ float getMedianDepth() {
   int count = 0;
 
   for (int i = 0; i < 5; ++i) {
-    if (sensor.read()) {
-      float raw = sensor.depth();
-      if (raw > 0.0 && raw < 10.0) {
-        readings[count++] = raw;
-      }
+    sensor.read();  // ✅ Just call it
+    float raw = sensor.depth();
+
+    // Check for realistic range
+    if (raw > 0.0 && raw < 10.0) {
+      readings[count++] = raw;
     }
+
     delay(10);
   }
 
@@ -77,6 +79,7 @@ float getMedianDepth() {
   lastGoodDepth = median + DEPTH_OFFSET;
   return lastGoodDepth;
 }
+
 
 
 
