@@ -70,26 +70,14 @@ void controlDepthCycle() {
   float depth;
   const float tolerance = 0.05;
   static float lastValidDepth = 0.0;
-  static int depthFailCount = 0;
-  const int maxConsecutiveFails = 30;
 
   if (!getAverageDepth(depth)) {
-
-    depthFailCount++;
-    Serial.print("⚠️ Depth read failed. Using last good depth: ");
+    Serial.print("⚠️ Sensor read failed. Using last known depth: ");
     Serial.println(lastValidDepth);
-
-  if (depthFailCount >= maxConsecutiveFails) {
-    engine(3, 0);
-    Serial.println("❌ Too many bad readings. Halting.");
-    return;
-  }
-
-  depth = lastValidDepth;  // Use fallback
+    depth = lastValidDepth;  // Fallback to last good depth
   } else {
-    lastValidDepth = depth;
-    depthFailCount = 0;  // Reset fail counter
-}
+    lastValidDepth = depth;  // Update fallback value
+  }
 
   switch (currentState) {
     case GOING_DOWN:
@@ -105,7 +93,7 @@ void controlDepthCycle() {
       break;
 
     case HOLDING_AT_BOTTOM:
-      engine(3, 0);
+      engine(3, 0);  // Stay neutral
       if (holdStarted && millis() - holdStartTime >= 10000) {
         Serial.println("Hold complete. Going back to 1m.");
         holdStarted = false;
@@ -124,6 +112,8 @@ void controlDepthCycle() {
       break;
   }
 }
+
+
 
 void setup() {
   Serial.begin(SerialBaudRate);
