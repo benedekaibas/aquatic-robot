@@ -66,6 +66,13 @@ float readDepth() {
   return avgDepth;
 }
 
+void softStartMotor(int power){
+  for(int p = 0; p <= power; p += 10){
+    engine(3, p);
+    delay(50);
+  }
+}
+
 void controlLogic() {
   float depth = readDepth();
   Serial.print("Depth: ");
@@ -74,7 +81,7 @@ void controlLogic() {
   switch (currentState) {
     case GOING_DOWN:
       if (depth < DEPTH_BOTTOM - DEPTH_TOLERANCE) {
-        engine(3, 100);  // Move down
+        softStartMotor(100);  // Move down
       } else {
         engine(3, 0);
         holdStartTime = millis();
