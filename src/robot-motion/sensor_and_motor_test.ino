@@ -1,23 +1,23 @@
 #include <Wire.h>
 #include "MS5837.h"
-
-// === Motor Includes ===
 #include <SoftwareSerial.h>
 #include <SabertoothSimplified.h>
 
-// === Sensor ===
 MS5837 sensor;
 
-// === Motor Setup ===
-const int ST1_S2 = 4; // Motor selection pin
-SoftwareSerial SWSerial(NOT_A_PIN, 10); // TX only
+// Pins
+const int ST1_S2 = 4;
+
+// Communication
+const int SerialBaudRate = 9600;
+SoftwareSerial SWSerial(NOT_A_PIN, 10);  // TX only
 SabertoothSimplified ST(SWSerial);
 
-// === Timing ===
+// Timing
 unsigned long lastReadTime = 0;
 const unsigned long interval = 5000; // 5 seconds
 
-// === Motor Control ===
+// Motor helper function
 void engine(int motorNum, int power) {
   if (motorNum == 3) {
     digitalWrite(ST1_S2, HIGH);
@@ -29,11 +29,10 @@ void engine(int motorNum, int power) {
 
 void setup() {
   Serial.begin(9600);
-  SWSerial.begin(9600);          // Motor serial
+  SWSerial.begin(9600);
   Wire.begin();
   pinMode(ST1_S2, OUTPUT);
 
-  // Initialize sensor
   sensor.setModel(MS5837::MS5837_30BA);
   sensor.setFluidDensity(997);  // Freshwater
 
@@ -44,10 +43,9 @@ void setup() {
 
   Serial.println("✅ Depth test initialized. Reading every 5 seconds...");
 
-  // Start motor for interference testing
-  delay(1000);  // Optional startup delay
-  Serial.println("⚙️ Motor starting for interference test...");
-  engine(3, 100);  // Constant motor thrust (e.g., going down)
+  // 🟢 Turn on motor with minimal power
+  Serial.println("⚙️ Motor starting with minimal power...");
+  engine(3, 10);  // Low forward power
 }
 
 void loop() {
