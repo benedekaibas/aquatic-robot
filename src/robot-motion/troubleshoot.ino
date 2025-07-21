@@ -5,44 +5,98 @@
 
 MS5837 sensor;
 
-// Motor control setup
+// Pin Definitions
 const int ST1_S2 = 4;
-SoftwareSerial SWSerial(NOT_A_PIN, 10); // TX only
+
+// Communication
+const int SerialBaudRate = 9600;
+SoftwareSerial SWSerial(NOT_A_PIN, 10);
 SabertoothSimplified ST(SWSerial);
 
-// Motor speed
-const int MOTOR_POWER = 60;  // Gentle descent
+// State
+enum DepthState { GOING_DOWN, HOLDING_AT_BOTTOM, GOING_UP };
+DepthState currentState = GOING_DOWN;
+
+unsigned long holdStartTime = 0;
+bool holdStarted = false;
+
+void engine(int motorNum, int power = 127) {
+  if (motorNum == 3) {
+    digitalWrite(ST1_S2, HIGH);
+    ST.motor(1, power);
+    delayMicroseconds(50);
+    digitalWrite(ST1_S2, LOW);
+  }
+}
+
+void measureDepth(float &depth, float depthOffset) {
+  sensor.read();
+  depth = sensor.depth() + depthOffset;
+  Serial.print("Depth: ");
+  Serial.print(depth);
+  Serial.println(" m");
+}
+
+void controlDepthCycle() {
+  float depth;
+  float depthOffset = 0.5;
+  const float tolerance = 0.05;
+
+  measureDepth(depth, depthOffset);
+
+  switch (currentState) {
+    case GOING_DOWN:
+      if (depth < 3.0 - tolerance) {
+        engine(3, 100);  // Move down
+      } else {
+        engine(3, 0);    // Stop
+        Serial.println("Reached 3m. Holding...");
+        holdStartTime = millis();
+        holdStarted = true;
+        currentState = HOLDING_AT_BOTTOM;
+      }
+      break;
+
+    case HOLDING_AT_BOTTOM:
+      engine(3, 0);  // Stay still
+      if (holdStarted && millis() - holdStartTime >= 10000) {
+        Serial.println("Hold complete. Going back to 1m.");
+        holdStarted = false;
+        currentState = GOING_UP;
+      }
+      break;
+
+    case GOING_UP:
+      if (depth > 1.0 + tolerance) {
+        engine(3, -100); // Move up (negative power)
+      } else {
+        engine(3, 0);
+        Serial.println("Reached 1m. Going back to 3m.");
+        currentState = GOING_DOWN;
+      }
+      break;
+  }
+}
 
 void setup() {
-  Serial.begin(9600);
-  SWSerial.begin(9600);
+  Serial.begin(SerialBaudRate);
+  SWSerial.begin(SerialBaudRate);
   Wire.begin();
   pinMode(ST1_S2, OUTPUT);
 
-  // Initialize sensor
-  sensor.setModel(MS5837::MS5837_30BA);
-  sensor.setFluidDensity(997);
   if (!sensor.init()) {
-    Serial.println("❌ MS5837 sensor not found!");
-    while (true) delay(1000);
+    Serial.println("MS5837 not found!");
+    while (1);
   }
 
-  Serial.println("✅ Starting descent...");
+  sensor.setModel(MS5837::MS5837_30BA);
+  sensor.setFluidDensity(997);
+  // sensor.setOversampling(MS5837::OSR_8192);
+  // sensor.begin();
+
+  Serial.println("System initialized. Starting depth loop...");
 }
 
 void loop() {
-  // Run motor gently downward
-  digitalWrite(ST1_S2, HIGH);
-  ST.motor(1, MOTOR_POWER);
-  delayMicroseconds(50);
-  digitalWrite(ST1_S2, LOW);
-
-  // Read and report depth
-  sensor.read();
-  float depth = sensor.depth();
-  Serial.print("📏 Depth: ");
-  Serial.print(depth);
-  Serial.println(" m");
-
-  delay(1000);  // Read every second
+  controlDepthCycle();
 }
