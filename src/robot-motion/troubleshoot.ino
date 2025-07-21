@@ -3,24 +3,37 @@
 #include <SoftwareSerial.h>
 #include <SabertoothSimplified.h>
 
+// Sensor and communication
 MS5837 sensor;
-
-// Pin Definitions
-const int ST1_S2 = 4;
-
-// Communication
 const int SerialBaudRate = 9600;
-SoftwareSerial SWSerial(NOT_A_PIN, 10);
+SoftwareSerial SWSerial(NOT_A_PIN, 10); // TX only
 SabertoothSimplified ST(SWSerial);
 
+// Motor control pin
+const int ST1_S2 = 4;
+
 // State
-enum DepthState { GOING_DOWN, HOLDING_AT_BOTTOM, GOING_UP };
+enum DepthState { GOING_DOWN, REACHED_TARGET, GOING_UP, DONE };
 DepthState currentState = GOING_DOWN;
 
-unsigned long holdStartTime = 0;
-bool holdStarted = false;
+void setup() {
+  Serial.begin(SerialBaudRate);
+  SWSerial.begin(SerialBaudRate);
+  Wire.begin();
+  pinMode(ST1_S2, OUTPUT);
 
-void engine(int motorNum, int power = 127) {
+  sensor.setModel(MS5837::MS5837_30BA);
+  sensor.setFluidDensity(997); // Freshwater
+
+  if (!sensor.init()) {
+    Serial.println("❌ MS5837 sensor not found!");
+    while (true) delay(1000);
+  }
+
+  Serial.println("✅ System initialized. Starting...");
+}
+
+void engine(int motorNum, int power) {
   if (motorNum == 3) {
     digitalWrite(ST1_S2, HIGH);
     ST.motor(1, power);
@@ -29,74 +42,66 @@ void engine(int motorNum, int power = 127) {
   }
 }
 
-void measureDepth(float &depth, float depthOffset) {
-  sensor.read();
-  depth = sensor.depth() + depthOffset;
-  Serial.print("Depth: ");
-  Serial.print(depth);
-  Serial.println(" m");
+bool getFilteredDepth(float &depth, int samples = 3, float offset = 0.5) {
+  float sum = 0;
+  int count = 0;
+
+  for (int i = 0; i < samples; i++) {
+    sensor.read();
+    float d = sensor.depth();
+    if (d > -5.0 && d < 20.0) {
+      sum += d;
+      count++;
+    }
+    delay(50); // Slow down reads
+  }
+
+  if (count == 0) return false;
+  depth = (sum / count) + offset;
+  return true;
 }
 
-void controlDepthCycle() {
+void loop() {
   float depth;
-  float depthOffset = 0.5;
-  const float tolerance = 0.05;
+  if (!getFilteredDepth(depth)) {
+    Serial.println("❌ Invalid depth reading");
+    engine(3, 0);
+    delay(500);
+    return;
+  }
 
-  measureDepth(depth, depthOffset);
+  Serial.print("📏 Depth: ");
+  Serial.println(depth, 2);
 
   switch (currentState) {
     case GOING_DOWN:
-      if (depth < 3.0 - tolerance) {
-        engine(3, 100);  // Move down
+      if (depth < 1.0) {
+        engine(3, 100); // Dive
       } else {
-        engine(3, 0);    // Stop
-        Serial.println("Reached 3m. Holding...");
-        holdStartTime = millis();
-        holdStarted = true;
-        currentState = HOLDING_AT_BOTTOM;
-      }
-      break;
-
-    case HOLDING_AT_BOTTOM:
-      engine(3, 0);  // Stay still
-      if (holdStarted && millis() - holdStartTime >= 10000) {
-        Serial.println("Hold complete. Going back to 1m.");
-        holdStarted = false;
+        engine(3, 0);
+        Serial.println("✅ Reached 1m. Surfacing...");
         currentState = GOING_UP;
       }
       break;
 
     case GOING_UP:
-      if (depth > 1.0 + tolerance) {
-        engine(3, -100); // Move up (negative power)
+      if (depth > 0.3) {
+        engine(3, -100); // Ascend
       } else {
         engine(3, 0);
-        Serial.println("Reached 1m. Going back to 3m.");
-        currentState = GOING_DOWN;
+        Serial.println("✅ Surfaced.");
+        currentState = DONE;
       }
       break;
-  }
-}
 
-void setup() {
-  Serial.begin(SerialBaudRate);
-  SWSerial.begin(SerialBaudRate);
-  Wire.begin();
-  pinMode(ST1_S2, OUTPUT);
+    case DONE:
+      engine(3, 0);
+      delay(1000); // Sleep
+      break;
 
-  if (!sensor.init()) {
-    Serial.println("MS5837 not found!");
-    while (1);
+    default:
+      break;
   }
 
-  sensor.setModel(MS5837::MS5837_30BA);
-  sensor.setFluidDensity(997);
-  // sensor.setOversampling(MS5837::OSR_8192);
-  // sensor.begin();
-
-  Serial.println("System initialized. Starting depth loop...");
-}
-
-void loop() {
-  controlDepthCycle();
+  delay(100); // Avoid I2C overload
 }
