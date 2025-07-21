@@ -12,7 +12,7 @@ SabertoothSimplified ST(SWSerial);
 // Motor control pin
 const int ST1_S2 = 4;
 
-// State
+// State machine
 enum DepthState { GOING_DOWN, REACHED_TARGET, GOING_UP, DONE };
 DepthState currentState = GOING_DOWN;
 
@@ -53,7 +53,7 @@ bool getFilteredDepth(float &depth, int samples = 3, float offset = 0.5) {
       sum += d;
       count++;
     }
-    delay(50); // Slow down reads
+    delay(200); // Increased delay to reduce sensor workload
   }
 
   if (count == 0) return false;
@@ -76,7 +76,7 @@ void loop() {
   switch (currentState) {
     case GOING_DOWN:
       if (depth < 1.0) {
-        engine(3, 100); // Dive
+        engine(3, 75); // Dive slowly
       } else {
         engine(3, 0);
         Serial.println("✅ Reached 1m. Surfacing...");
@@ -86,7 +86,7 @@ void loop() {
 
     case GOING_UP:
       if (depth > 0.3) {
-        engine(3, -100); // Ascend
+        engine(3, -127); // Ascend with full power
       } else {
         engine(3, 0);
         Serial.println("✅ Surfaced.");
@@ -96,12 +96,9 @@ void loop() {
 
     case DONE:
       engine(3, 0);
-      delay(1000); // Sleep
-      break;
-
-    default:
+      delay(1000); // Idle
       break;
   }
 
-  delay(100); // Avoid I2C overload
+  delay(200); // Further I2C throttling
 }
