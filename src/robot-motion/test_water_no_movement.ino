@@ -30,24 +30,35 @@ void engine(int motorNum, int power = 127) {
   }
 }
 
-// Direct depth reading (no averaging)
-float readDepth(float offset = 0.5) {
+// Simple depth reader that prints each reading
+bool getDepth(float &depth, float offset = 0.5) {
   sensor.read();
-  float depth = sensor.depth() + offset;
-
-  Serial.print("Depth: ");
-  Serial.print(depth);
-  Serial.println(" m");
-
-  return depth;
+  float raw = sensor.depth();
+  
+  if (raw > -5.0 && raw < 20.0) {
+    depth = raw + offset;
+    
+    // Print every depth reading
+    Serial.print("Depth reading: ");
+    Serial.println(depth);
+    return true;
+  } else {
+    Serial.println("❌ Invalid depth reading");
+    depth = -999.0;
+    return false;
+  }
 }
-
-/*
 
 // Controls depth logic based on state machine
 void controlDepthCycle() {
-  float depth = readDepth();  // Direct read
+  float depth;
   const float tolerance = 0.05;
+
+  if (!getDepth(depth)) {
+    engine(3, 0);
+    Serial.println("Invalid depth. Halting.");
+    return;
+  }
 
   switch (currentState) {
     case GOING_DOWN:
@@ -82,7 +93,6 @@ void controlDepthCycle() {
       break;
   }
 }
-*/
 
 void setup() {
   Serial.begin(SerialBaudRate);
@@ -105,5 +115,5 @@ void setup() {
 
 void loop() {
   controlDepthCycle();
-  delay(200);  // Slight delay to avoid I2C spamming
+  delay(20);  // Prevents I2C spamming
 }
