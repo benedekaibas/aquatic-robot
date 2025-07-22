@@ -55,7 +55,6 @@ void controlDepthCycle() {
   const float tolerance = 0.05;
 
   if (!getDepth(depth)) {
-    engine(3, 0);
     Serial.print("Invalid depth reading: ");
     Serial.println(depth);
     return;
