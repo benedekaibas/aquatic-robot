@@ -56,7 +56,8 @@ void controlDepthCycle() {
 
   if (!getDepth(depth)) {
     engine(3, 0);
-    Serial.println("Invalid depth. Halting.");
+    Serial.print("Invalid depth reading: ");
+    Serial.println(depth);
     return;
   }
 
