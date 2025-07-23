@@ -1,7 +1,7 @@
 #include <Wire.h>
 #include "MS5837.h"
 #include <SoftwareSerial.h>
-#include <SabertoothSimplified.h>
+#include <SabertoothSimplified.h"
 
 // Sensor and communication
 MS5837 sensor;
@@ -12,8 +12,8 @@ SabertoothSimplified ST(SWSerial);
 // Motor control pin
 const int ST1_S2 = 4;
 
-// State machine
-enum DepthState { GOING_DOWN, REACHED_TARGET, GOING_UP, DONE };
+// State
+enum DepthState { GOING_DOWN, REACHED_2M, GOING_UP_TO_1M, REACHED_1M, GOING_UP_TO_SURFACE, DONE };
 DepthState currentState = GOING_DOWN;
 
 void setup() {
@@ -75,21 +75,31 @@ void loop() {
 
   switch (currentState) {
     case GOING_DOWN:
-      if (depth < 1.0) {
-        engine(3, 75); // Dive slowly
+      if (depth < 2.0) {
+        engine(3, 75);  // Gentle dive
       } else {
         engine(3, 0);
-        Serial.println("✅ Reached 1m. Surfacing...");
-        currentState = GOING_UP;
+        Serial.println("✅ Reached 2m. Ascending...");
+        currentState = GOING_UP_TO_1M;
       }
       break;
 
-    case GOING_UP:
-      if (depth > 0.3) {
-        engine(3, -127); // Ascend with full power
+    case GOING_UP_TO_1M:
+      if (depth > 1.2) {
+        engine(3, -127);  // Strong ascent
       } else {
         engine(3, 0);
-        Serial.println("✅ Surfaced.");
+        Serial.println("✅ Reached 1m. Continuing to surface...");
+        currentState = GOING_UP_TO_SURFACE;
+      }
+      break;
+
+    case GOING_UP_TO_SURFACE:
+      if (depth > 0.3) {
+        engine(3, -127);  // Continue ascent
+      } else {
+        engine(3, 0);
+        Serial.println("✅ Surfaced. Mission complete.");
         currentState = DONE;
       }
       break;
@@ -98,10 +108,11 @@ void loop() {
       engine(3, 0);
       delay(1000); // Idle
       break;
+
+    default:
+      engine(3, 0); // Safety stop
+      break;
   }
 
-  // another switch case after getting to one meter take reading and then go down to 2 meters
-  // 
-
-  delay(200); // Further I2C throttling
+  delay(200); // Prevent I2C overload
 }
