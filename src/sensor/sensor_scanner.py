@@ -2,8 +2,11 @@ import serial
 import time
 
 def connect_sensor():
-    srl = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
-    return srl
+    try:
+        srl = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+        return srl
+    except SerialTimeoutException as ste:
+        return ste
 
 def single_read():
     """Get a single reading from the sensor to see if connection was successful."""
