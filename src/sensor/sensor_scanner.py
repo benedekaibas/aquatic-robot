@@ -21,8 +21,8 @@ def single_read():
 def continuous_reading():
     """Receive continuous reading from the sensor."""
     srl = connect_sensor()
+    print("pH readings: ")
     srl.write(b"C,5\r")
-
     return srl
 
 

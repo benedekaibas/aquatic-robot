@@ -19,6 +19,20 @@ getting the readings out of the sensors through the EZO circuits. To run this fi
 command in the terminal `python sensor_scanner.py`. Once you run the command you should be able to see the readings
 of the sensor.
 
+## Sensors and their addresses
+
+Each sensor has a different hexadecimal address. We should know each sensor's address in order to get access to them and
+also when we need to troubleshoot this information can be helpful. Below you can read each sensor's address in hexadecimal
+value. Also if you take a look at the `sensor_scanner.py` file you can see how to addresses are handled/processed.
+
+- Addresses of the sensors:
+
+- 1) pH: 0x63
+- 2) Dissolved Oxygen: 0x61
+- 3) ORP: 0x62
+- 4) EC: 0x64
+- 5) RTD: 0x68
+
 ## Error messages
 
 The `sensor_scanner` file is written in a way to handle errors in a proper way. In some cases it gives error messages
