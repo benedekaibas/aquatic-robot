@@ -28,8 +28,7 @@ def single_read():
 
     for port in ports:
         try:
-            srl = serial.Serial(port, 9600, timeout=0.01)
-            serials.append(srl)
+            serials.append(port)
         except serial.SerialException as s:
             print(f"Could not find or connect to port: {port}: {s}")
 
