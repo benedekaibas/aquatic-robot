@@ -46,7 +46,7 @@ def single_read():
             print(f"Could not find or connect to port: {port}: {s}")
 
     while True:
-        for srl in serials:
+        for srl in range(len(serials)): # check this line if it resolves our problem with the iteration
             if srl.in_waiting > 0:
                 data = srl.readline().decode().split()
                 print(f"{srl.port}: {data}")
