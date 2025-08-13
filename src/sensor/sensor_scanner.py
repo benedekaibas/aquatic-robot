@@ -24,15 +24,21 @@ def store_ports():
 def single_read():
     """Get a single reading from the sensor to see if connection was successful."""
     ports = store_ports()
+    serials = []
+
     for port in ports:
-        port.write(b"R\r")
+        try:
+            srl = serial.Serial(port, 9600, timeout=0.01)
+            serials.append(srl)
+        except serial.SerialException as s:
+            print(f"Could not find or connect to port: {port}: {s}")
 
-    time.sleep(1) # time sleep for not overwhelming the sensor, but it might need to remove
-    while(port.in_waiting):
-        print(port.readline().decode().split())
-
-    port.close()
-
+    while True:
+        for srl in serials:
+            if srl.waiting > 0:
+                data = srl.readline().decode().split()
+                print(f"{srl.port}: {data}")
+            time.sleep(0.01)
 
 if __name__ == "__main__":
     single_read()
