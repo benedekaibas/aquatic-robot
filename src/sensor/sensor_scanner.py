@@ -46,7 +46,7 @@ def single_read():
     while True:
         for srl in serials:
             srl.write(b"R\r")
-            time.sleep(0.01)
+            time.sleep(0.03)
 
             if srl.in_waiting > 0:
                 data = srl.readline().decode().split()
