@@ -21,6 +21,17 @@ def store_ports():
 
     return ports_list
 
+def one_port_read():
+    """This function can be used to test different ports."""
+
+    dh = serial.Serial('dev/ttyUSB1', 9600, timeout=1)
+    dh.write(b"R\r")
+
+    time.sleep(1)
+    while(dh.in_waiting):
+        data = dh.readline().decode().split()
+        print(f"{dh.port}: {data}")
+
 def single_read():
     """Get a single reading from the sensor to see if connection was successful."""
     ports = store_ports()
