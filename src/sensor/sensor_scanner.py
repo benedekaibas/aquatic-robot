@@ -34,7 +34,7 @@ def single_read():
 
     while True:
         for srl in serials:
-            if srl.waiting > 0:
+            if srl.in_waiting > 0:
                 data = srl.readline().decode().split()
                 print(f"{srl.port}: {data}")
             time.sleep(0.01)
