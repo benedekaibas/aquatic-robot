@@ -1,13 +1,11 @@
-"""Receiving and processing data from Atlas Scientific sensors."""
-import time
 import serial
+import time
 
-#from serial import SerialException, SerialTimeoutException
+from serial import SerialException, SerialTimeoutException
 
 
 
 def store_ports():
-    """Storing sensor ports."""
     ports_list = []
 
     ph = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
@@ -30,7 +28,7 @@ def one_port_read():
     dh.write(b"R\r")
 
     time.sleep(1)
-    while dh.in_waiting:
+    while(dh.in_waiting):
         data = dh.readline().decode().split()
         print(f"{dh.port}: {data}")
 
@@ -46,14 +44,14 @@ def single_read():
             print(f"Could not find or connect to port: {port}: {s}")
 
     while True:
-        for srl in range(len(serials)): # check this line if it resolves our problem with the iteration
-            srl_char = serials[srl].read(1)
+        for srl in serials:
+            srl.write(b"R\r")
+            time.sleep(0.01)
 
-            try:
-                srl_char = srl_char.readline().decode().split()
-            except UnicodeDecodeError:
-                pass
-
+            if srl.in_waiting > 0:
+                data = srl.readline().decode().split()
+                print(f"{srl.port}: {data}")
+            time.sleep(0.01)
 
 if __name__ == "__main__":
     single_read()
