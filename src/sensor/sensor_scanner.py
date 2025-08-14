@@ -47,10 +47,13 @@ def single_read():
 
     while True:
         for srl in range(len(serials)): # check this line if it resolves our problem with the iteration
-            if srl.in_waiting > 0:
-                data = srl.readline().decode().split()
-                print(f"{srl.port}: {data}")
-            time.sleep(0.01)
+            srl_char = serials[srl].read(1)
+
+            try:
+                srl_char = srl_char.readline().decode().split()
+            except UnicodeDecodeError:
+                pass
+
 
 if __name__ == "__main__":
     single_read()
