@@ -1,12 +1,14 @@
 #include <iostream>
 #include <vector>
-
+#include <fcntl.h>
+#include <errno.h>
+#include <termios.h>
+#include <unistd.h> 
 
 struct Ports {
-    std::string sensor;
-    std::string port;
+    const char* sensor;
+    const char* port;
 };
-
 
 
 auto read_ports() {
@@ -16,8 +18,10 @@ auto read_ports() {
         
     };
 
-    for(const auto& p: ports){
-        std::cout << p.sensor << "" << p.port << std::endl;
+    for(const char* p: ports){
+       int serial_port;
+       const char* serial_port_ptr = &p.port;
+       serial_port = open(serial_port_ptr, O_RDWR);
     }
 }
 
