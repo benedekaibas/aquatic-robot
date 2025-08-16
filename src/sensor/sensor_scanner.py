@@ -1,11 +1,13 @@
-import serial
+"""Reading sensors' values through serial port."""
 import time
+import serial
 
-from serial import SerialException, SerialTimeoutException
+#from serial import SerialException, SerialTimeoutException
 
 
 
 def store_ports():
+    """Storing sensors' ports in a list."""
     ports_list = []
 
     ph = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
@@ -28,7 +30,7 @@ def one_port_read():
     dh.write(b"R\r")
 
     time.sleep(1)
-    while(dh.in_waiting):
+    while dh.in_waiting:
         data = dh.readline().decode().split()
         print(f"{dh.port}: {data}")
 
