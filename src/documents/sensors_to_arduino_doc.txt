@@ -1,6 +1,0 @@
-This document is created for giving detailed description of connecting atlas scientific sensors with arduino
-and importing the readings to our code.
-
-What do we need for scanning the sensors:
-
-

@@ -1,3 +1,0 @@
-Documentation for returning values of sensor readings:
-https://forum.arduino.cc/t/reading-from-atlas-scientific-dissolved-oxygen-sensor/525278/3
-
