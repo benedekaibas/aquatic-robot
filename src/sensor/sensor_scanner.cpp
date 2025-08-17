@@ -2,7 +2,7 @@
 #include <vector>
 #include <fcntl.h>
 #include <errno.h>
-#include <termios.h>
+//#include <termios.h>
 //#include <unistd.h> 
 
 struct Ports {
@@ -26,6 +26,7 @@ auto get_ports() {
     }
 }
 
+/*
 auto read_ports() {
     std::vector<Ports> ports = {
         {"ph", "/dev/ttyUSB0"},
@@ -39,8 +40,9 @@ auto read_ports() {
        serial_port = open(serial_port_ptr, O_RDWR);
     }
 }
+*/
 
 int main() {
-    read_ports();
+    get_ports();
 }
 
