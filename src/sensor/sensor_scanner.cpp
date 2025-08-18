@@ -2,8 +2,8 @@
 #include <vector>
 #include <fcntl.h>
 #include <errno.h>
-//#include <termios.h>
-//#include <unistd.h> 
+#include <termios.h>
+#include <unistd.h> 
 
 struct Ports {
     const char* sensor;
@@ -18,8 +18,8 @@ auto get_ports() {
 
     std::vector<const char*> vec_port = {ports.sensor, ports.port};
 
-    for (const char* p: vec_port) {
-        int serial_port;
+    for (const char* p: vec_port) { // NOTE: const char* p is unused in this implementation
+        int serial_port;            // so that should be fixed either this approach works or not
         const char* serial_port_ptr = ports.sensor;
         serial_port = open(serial_port_ptr, O_RDWR);
         std::cout << serial_port;
