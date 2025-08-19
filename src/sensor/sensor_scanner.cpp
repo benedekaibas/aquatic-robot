@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <termios.h>
-#include <unistd.h> 
+#include <unistd.h>
 
 struct Ports {
     const char* sensor;
@@ -31,7 +31,7 @@ auto read_ports() {
     std::vector<Ports> ports = {
         {"ph", "/dev/ttyUSB0"},
         {"od", "/dev/ttyUSB1"}
-        
+
     };
 
     for(const char* p: ports){
