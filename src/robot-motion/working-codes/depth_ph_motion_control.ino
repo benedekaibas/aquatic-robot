@@ -21,8 +21,10 @@ enum DepthState {
   GOING_UP_TO_1M,
   HOLDING_AT_1M,
   GOING_TO_SURFACE,
+  STOP_AT_PH_CHANGE,
   DONE
 };
+
 DepthState currentState = GOING_DOWN_TO_3M;
 
 // Timing
@@ -70,6 +72,26 @@ bool getFilteredDepth(float &depth, int samples = 3, float offset = 0.5) {
   }
 
   if (count == 0) return false;
+  depth = (sum / count) + offset;
+  return true;
+}
+
+bool getPhChange(float &depth, int samples = 3, float offset = 0.5) {
+  float sum = 0.0;
+  int count = 0;
+  const float phChange = 1.3 // this is where the pH significantly changes in the water
+  
+  for(int i = 0; i < samples; ++i) {
+    sensor.read();
+    float sensor_depth = sensor.depth();
+
+    if (sensor_depth > -5.0 && sensor_depth < 20) {
+      sum += sensor_depth;
+      count++
+    }
+    delay(300);
+  }
+  if(count == 0) return false;
   depth = (sum / count) + offset;
   return true;
 }
