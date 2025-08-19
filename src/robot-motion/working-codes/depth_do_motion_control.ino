@@ -2,6 +2,12 @@
 #include "MS5837.h"
 #include <SoftwareSerial.h>
 #include <SabertoothSimplified.h>
+#include <math.h>  // for fabsf
+
+// ====== DO change marker config ======
+const float DO_MARKER = 1.5f;          // meters: depth where DO changes significantly
+const float DO_BAND   = 0.05f;         // meters: tolerance band to reduce chattering
+const unsigned long DO_COOLDOWN_MS = 2000; // ms: minimum time between marker logs
 
 // Sensor and communication
 MS5837 sensor;
@@ -21,7 +27,6 @@ enum DepthState {
   GOING_UP_TO_1M,
   HOLDING_AT_1M,
   GOING_TO_SURFACE,
-  STOP_AT_PH_CHANGE,
   DONE
 };
 
@@ -29,7 +34,11 @@ DepthState currentState = GOING_DOWN_TO_3M;
 
 // Timing
 unsigned long holdStartTime = 0;
-const unsigned long holdDuration = 5000; // 10 seconds
+const unsigned long holdDuration = 5000; // 5 seconds (update comment if you want 10s)
+
+// Internal tracking
+float prevDepth = NAN;
+unsigned long lastDoNotifyMs = 0;
 
 void setup() {
   Serial.begin(SerialBaudRate);
@@ -57,14 +66,14 @@ void engine(int motorNum, int power) {
   }
 }
 
-bool getFilteredDepth(float &depth, int samples = 3, float offset = 0.5) {
+bool getFilteredDepth(float &depth, int samples = 3, float offset = 0.5f) {
   float sum = 0;
   int count = 0;
 
   for (int i = 0; i < samples; i++) {
     sensor.read();
     float d = sensor.depth();
-    if (d > -5.0 && d < 20.0) {
+    if (d > -5.0f && d < 20.0f) {
       sum += d;
       count++;
     }
@@ -76,24 +85,42 @@ bool getFilteredDepth(float &depth, int samples = 3, float offset = 0.5) {
   return true;
 }
 
-bool getPhChange(float &depth, int samples = 3, float offset = 0.5) {
-  float sum = 0.0;
-  int count = 0;
-  const float phChange = 1.3 // this is where the pH significantly changes in the water
-  
-  for(int i = 0; i < samples; ++i) {
-    sensor.read();
-    float sensor_depth = sensor.depth();
+static inline bool crossedMarker(float from, float to, float marker, float band) {
+  // Detects a crossing of 'marker' between depths 'from' -> 'to' with a small band to avoid noise
+  // Cross if the segment straddles the marker (opposite sides) and moved more than band.
+  if (isnan(from)) return false;
+  if (fabsf(to - from) < band) return false;
+  const bool before = (from < marker - band);
+  const bool after  = (to   < marker - band);
+  const bool beforeHigh = (from > marker + band);
+  const bool afterHigh  = (to   > marker + band);
 
-    if (sensor_depth > -5.0 && sensor_depth < 20) {
-      sum += sensor_depth;
-      count++
+  // Cross upward: from deeper than (marker+band) to shallower than (marker-band)
+  if (beforeHigh && !afterHigh && to <= marker + band) return true;
+  // Cross downward: from shallower than (marker-band) to deeper than (marker+band)
+  if (!before && after && to >= marker - band) return true;
+
+  // Generic sign change check (fallback)
+  if ((from - marker) * (to - marker) <= 0) return true;
+
+  return false;
+}
+
+void maybeLogDoMarker(float depth) {
+  if (crossedMarker(prevDepth, depth, DO_MARKER, DO_BAND)) {
+    unsigned long now = millis();
+    if (now - lastDoNotifyMs >= DO_COOLDOWN_MS) {
+      const char* dir = (depth < prevDepth) ? "⬆️ ascending" : "⬇️ descending";
+      Serial.print("🔶 DO marker crossed near ");
+      Serial.print(DO_MARKER, 2);
+      Serial.print(" m (");
+      Serial.print(dir);
+      Serial.print("). Current depth: ");
+      Serial.print(depth, 2);
+      Serial.println(" m");
+      lastDoNotifyMs = now;
     }
-    delay(300);
   }
-  if(count == 0) return false;
-  depth = (sum / count) + offset;
-  return true;
 }
 
 void loop() {
@@ -105,13 +132,15 @@ void loop() {
     return;
   }
 
+  // Log DO marker crossings (no behavior change)
+  maybeLogDoMarker(depth);
+
   Serial.print("📏 Depth: ");
   Serial.println(depth, 2);
 
   switch (currentState) {
-
     case GOING_DOWN_TO_3M:
-      if (depth < 3.0) {
+      if (depth < 3.0f) {
         engine(3, 75);  // Slow descent
       } else {
         engine(3, 0);
@@ -121,7 +150,7 @@ void loop() {
       break;
 
     case GOING_UP_TO_2M:
-      if (depth > 2.2) {
+      if (depth > 2.2f) {
         engine(3, -127); // Fast ascent
       } else {
         engine(3, 0);
@@ -140,7 +169,7 @@ void loop() {
       break;
 
     case GOING_UP_TO_1M:
-      if (depth > 1.2) {
+      if (depth > 1.2f) {
         engine(3, -127); // Fast ascent
       } else {
         engine(3, 0);
@@ -159,7 +188,7 @@ void loop() {
       break;
 
     case GOING_TO_SURFACE:
-      if (depth > 0.3) {
+      if (depth > 0.3f) {
         engine(3, -127); // Continue ascent
       } else {
         engine(3, 0);
@@ -174,6 +203,6 @@ void loop() {
       break;
   }
 
+  prevDepth = depth; // update after logic
   delay(200); // Prevent I2C overload
 }
-
