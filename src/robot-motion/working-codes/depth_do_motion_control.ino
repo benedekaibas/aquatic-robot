@@ -5,9 +5,9 @@
 #include <math.h>  // for fabsf
 
 // ====== DO change marker config ======
-const float DO_MARKER = 1.5f;          // meters: depth where DO changes significantly
-const float DO_BAND   = 0.05f;         // meters: tolerance band to reduce chattering
-const unsigned long DO_COOLDOWN_MS = 2000; // ms: minimum time between marker logs
+const float DO_MARKER = 1.5f;          // depth where DO changes significantly
+const float DO_BAND   = 0.05f;         // tolerance band
+const unsigned long DO_COOLDOWN_MS = 2000;
 
 // Sensor and communication
 MS5837 sensor;
@@ -34,7 +34,7 @@ DepthState currentState = GOING_DOWN_TO_3M;
 
 // Timing
 unsigned long holdStartTime = 0;
-const unsigned long holdDuration = 5000; // 5 seconds (update comment if you want 10s)
+const unsigned long holdDuration = 5000; // 5 seconds
 
 // Internal tracking
 float prevDepth = NAN;
