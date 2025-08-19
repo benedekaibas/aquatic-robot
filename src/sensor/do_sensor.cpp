@@ -45,7 +45,7 @@ static bool configure_port(int fd, speed_t baud = B9600) {
 }
 
 int main(int argc, char** argv) {
-    const char* dev = (argc > 1) ? argv[1] : "/dev/ttyUSB0";
+    const char* dev = (argc > 1) ? argv[1] : "/dev/ttyUSB1";
 
     int fd = open(dev, O_RDWR | O_NOCTTY | O_SYNC);
     if (fd < 0) {
