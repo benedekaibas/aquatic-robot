@@ -23,6 +23,7 @@ enum DepthState {
   GOING_TO_SURFACE,
   DONE
 };
+
 DepthState currentState = GOING_DOWN_TO_3M;
 
 // Timing
