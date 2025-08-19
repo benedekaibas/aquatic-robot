@@ -92,3 +92,5 @@ int main(int argc, char** argv) {
     return 0;
 }
 
+// g++ -Wall -O2 -o do do_sensor.cpp
+
