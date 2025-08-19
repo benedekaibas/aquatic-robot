@@ -18,8 +18,8 @@ def read_do_port():
         do_value.write(b"R\r")
         count += 1
         data = do_value.readline().decode().split()
-        print(f"{do_value}: {data}")
-
+        #print(f"{do_value}: {data}")
+        print(data)
 
 if __name__ == "__main__":
     read_do_port()
