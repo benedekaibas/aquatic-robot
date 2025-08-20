@@ -12,9 +12,15 @@ int open_serial_port() {
   int serial_port = open("/dev/ttyUSB1", O_RDWR);
 
   if(serial_port < 0) {
-    std::cout << "Error %i from open: %s\n", errno, strerror(errno);
+    std::cerr << "Error while opning the port: " << strerror(errno);
+  } else {
+    std::cout << "Opened Serial Port" << serial_port;
   }
-  return serial_port;
+
+  char read_buffer[256];
+  int num_bytes = read(serial_port, &read_buffer, sizeof(read_buffer));
+
+  return num_bytes;
 }
 
 int main() {
