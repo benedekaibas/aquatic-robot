@@ -27,7 +27,7 @@ void open_serial_port() {
 
     if(num_bytes > 0) {
       response += std::string(read_buffer);
-      std::cout << read_buffer;
+      std::cout << read_buffer; // uncomment this like at next run to see changes in the output
     }
 
   } while(read_buffer[0] != 'X');
