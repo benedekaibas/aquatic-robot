@@ -19,8 +19,9 @@ step since we need the sensors to calibrate themselves. If the sensors go straig
 
 When placed in water we also have to wait 5-10 minutes to get the right readings. After that we can start recording the readings.
 
-Some of the sensors come with small covers. It is important to take them off before testing and put them back after testing. The sensors that come with a cover do need humidity while storing them, so make sure to put tap water into the covers after done with testing. Important note:
-do not put too much water into the covers because the water should not touch the sensors. Just make sure there is some water in the bottom of the cover to provide humid environment for the sensors.
+Some of the sensors come with small covers. It is important to take them off before testing and put them back after testing. The sensors that come with a cover do need humidity while storing them, so make sure to put tap water into the covers after done with testing.
+
+Important note: do not put too much water into the covers because the water should not touch the sensors. Just make sure there is some water in the bottom of the cover to provide humid environment for the sensors.
 
 ## Sensors' result
 
